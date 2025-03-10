@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>锂电池碳足迹智能评估系统</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --primary-color: #28a745;
+      --secondary-color: #20c997;
+      --highlight-color: #ffc107;
+      --light-green: rgba(40, 167, 69, 0.1);
+    }
+    .form-card {
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 0.5rem 1rem rgba(0,0,0,.1);
+    }
+    .nav-step {
+      padding: 1rem 2rem;
+      background: white;
+      border-radius: 0.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,.05);
+    }
+    .nav-step .step-item {
+      display: flex;
+      align-items: center;
+      color: #6c757d;
+      padding: 0.5rem 0;
+    }
+    .nav-step .step-item.active {
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+    .step-indicator {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: #dee2e6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.75rem;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+    .step-item.active .step-indicator {
+      background: var(--primary-color);
+      color: white;
+    }
+    .form-section {
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+    .form-section.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* 参数卡片样式 */
+    .param-category {
+      margin-bottom: 2rem;
+      background-color: white;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,.05);
+      border: 1px solid rgba(0,0,0,.05);
+    }
+    .param-category-header {
+      background-color: var(--light-green);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(0,0,0,.05);
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .param-category-header:hover {
+      background-color: rgba(40, 167, 69, 0.15);
+    }
+    .param-category-header h5 {
+      margin: 0;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .param-category-icon {
+      margin-right: 0.75rem;
+      color: var(--primary-color);
+      font-size: 1.25rem;
+    }
+    .param-category-body {
+      padding: 1.5rem;
+    }
+    .param-group {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px dashed rgba(0,0,0,.1);
+    }
+    .param-group:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .param-group-header {
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+    }
+    .param-group-title {
+      font-weight: 600;
+      color: #495057;
+      margin: 0;
+      font-size: 1rem;
+    }
+    .param-group-desc {
+      color: #6c757d;
+      margin: 0 0 1rem 0;
+      font-size: 0.875rem;
+    }
+    
+    /* 输入框样式 */
+    .input-group-text {
+      background-color: #f8f9fa;
+      color: #495057;
+      border-right: none;
+    }
+    .form-control, .form-select {
+      border-left: none;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+    }
+    .form-control:focus + .input-group-text,
+    .form-select:focus + .input-group-text {
+      border-color: var(--primary-color);
+    }
+    .input-unit {
+      font-size: 0.875rem;
+      color: #6c757d;
+      text-align: center;
+      min-width: 3rem;
+    }
+    
+    /* 标签样式 */
+    .param-tag {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+    .param-tag-required {
+      background-color: rgba(220, 53, 69, 0.1);
+      color: #dc3545;
+    }
+    .param-tag-optional {
+      background-color: rgba(108, 117, 125, 0.1);
+      color: #6c757d;
+    }
+    .param-tag-important {
+      background-color: rgba(255, 193, 7, 0.1);
+      color: #fd7e14;
+    }
+    
+    /* 表单行动区 */
+    .form-actions {
+      padding: 1.5rem;
+      background-color: #f8f9fa;
+      border-top: 1px solid rgba(0,0,0,.05);
+      border-radius: 0 0 0.75rem 0.75rem;
+    }
+    
+    /* 工具提示图标 */
+    .help-icon {
+      color: #6c757d;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      margin-left: 0.5rem;
+    }
+    .help-icon:hover {
+      color: var(--primary-color);
+    }
+    
+    /* 参数控件样式 */
+    .param-control {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .param-control:last-child {
+      margin-bottom: 0;
+    }
+    .param-label {
+      min-width: 150px;
+      margin-right: 1rem;
+      text-align: right;
+      font-weight: 500;
+      color: #495057;
+    }
+    .param-field {
+      flex-grow: 1;
+      position: relative;
+    }
+    
+    /* 突出显示必填字段 */
+    .highlight-required::after {
+      content: '*';
+      color: #dc3545;
+      position: absolute;
+      top: 0;
+      right: -10px;
+    }
+    
+    /* 搜索栏 */
+    .param-search {
+      margin-bottom: 1.5rem;
+    }
+    
+    /* 数值输入微调按钮 */
+    .param-stepper {
+      display: flex;
+      align-items: center;
+    }
+    .stepper-btn {
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f8f9fa;
+      border: 1px solid #ced4da;
+      cursor: pointer;
+      user-select: none;
+    }
+    .stepper-btn:hover {
+      background-color: #e9ecef;
+    }
+    .stepper-btn:active {
+      background-color: #dee2e6;
+    }
+    .stepper-input {
+      width: 5rem;
+      text-align: center;
+      border-left: none;
+      border-right: none;
+    }
+    
+    /* 结果卡片样式 */
+    .result-card {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-left: 4px solid var(--primary-color);
+      border-radius: 0.75rem;
+      box-shadow: 0 0.5rem 1rem rgba(0,0,0,.1);
+    }
+    
+    /* 表格样式 */
+    .table-responsive {
+      margin-top: 1rem;
+    }
+    .auto-fill {
+      color: #20c997;
+      font-weight: 500;
+      background-color: rgba(32, 201, 151, 0.1);
+    }
+    
+    /* 进度条样式 */
+    .progress-item {
+      margin-bottom: 15px;
+    }
+    .progress {
+      height: 20px;
+      border-radius: 0.5rem;
+      background-color: rgba(40, 167, 69, 0.1);
+    }
+    .progress-bar {
+      background-color: var(--primary-color);
+      border-radius: 0.5rem;
+    }
+    
+    /* 结果标签页样式 */
+    .results-nav .nav-link {
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      margin-right: 0.5rem;
+      font-weight: 500;
+      color: #495057;
+      background-color: #f8f9fa;
+      border: 1px solid transparent;
+    }
+    .results-nav .nav-link.active {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: transparent;
+    }
+    .results-nav .nav-link:hover:not(.active) {
+      background-color: #e9ecef;
+    }
+    
+    /* 参数详情表格样式 */
+    #features th, #features td {
+      padding: 0.75rem !important;
+      vertical-align: middle !important;
+    }
+    .param-header {
+      background-color: #f8f9fa !important;
+      font-weight: 600 !important;
+    }
+    .table-category-header {
+      background-color: #f8f9fa !important;
+      font-weight: 600 !important;
+      border-top: 1px solid rgba(0,0,0,0.2) !important;
+      border-bottom: 1px solid rgba(0,0,0,0.2) !important;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="form-card mb-4">
+          <!-- 步骤指示器 -->
+          <div class="nav-step d-flex justify-content-between">
+            <div class="step-item active" id="step-indicator-1">
+              <span class="step-indicator">1</span>
+              <span>基础参数</span>
+            </div>
+            <div class="step-item" id="step-indicator-2">
+              <span class="step-indicator">2</span>
+              <span>材料配置</span>
+            </div>
+            <div class="step-item" id="step-indicator-3">
+              <span class="step-indicator">3</span>
+              <span>能耗参数</span>
+            </div>
+          </div>
+
+          <form method="post" action="/predict" id="emissionForm">
+            <!-- 第一步：基础参数 -->
+            <div class="form-section active" id="step-1" data-step="1">
+              <div class="param-category">
+                <div class="param-category-header">
+                  <i class="bi bi-gear-fill param-category-icon"></i>
+                  <h5>基础配置参数</h5>
+                </div>
+                <div class="param-category-body">
+                  <div class="row g-4">
+                    <!-- 电池类型 -->
+                    <div class="col-md-4">
+                      <label class="form-label fw-medium position-relative highlight-required">电池类型</label>
+                      <select class="form-select" id="Battery_Type" name="Battery_Type" required>
+                        <option value="LFP" selected>磷酸铁锂电池 (LFP)</option>
+                        <option value="NMC">三元锂电池 (NMC)</option>
+                      </select>
+                      <div class="form-text">电池化学成分类型</div>
+                    </div>
+                    <!-- 组件生产地 -->
+                    <div class="col-md-4">
+                      <label class="form-label fw-medium position-relative highlight-required">组件生产地</label>
+                      <select class="form-select" id="Component_Country" name="Component_Country" required>
+                        <option value="China" selected>中国</option>
+                        <option value="Germany">德国</option>
+                        <option value="Japan">日本</option>
+                      </select>
+                      <div class="form-text">主要组件的生产国家</div>
+                    </div>
+                    <!-- 组装地区 -->
+                    <div class="col-md-4">
+                      <label class="form-label fw-medium position-relative highlight-required">组装地区</label>
+                      <select class="form-select" id="Assembly_Country" name="Assembly_Country" required>
+                        <option value="China" selected>中国</option>
+                        <option value="Germany">德国</option>
+                        <option value="Norway">挪威</option>
+                      </select>
+                      <div class="form-text">电池最终组装的国家</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 第二步：材料配置 -->
+            <div class="form-section" id="step-2" data-step="2">
+              <!-- 参数搜索栏 -->
+              <div class="param-search mb-4">
+                <div class="input-group">
+                  <span class="input-group-text bg-white">
+                    <i class="bi bi-search"></i>
+                  </span>
+                  <input type="text" class="form-control" id="paramSearch" placeholder="搜索参数..." aria-label="搜索参数">
+                </div>
+              </div>
+              
+              <!-- 电极材料类别 -->
+              <div class="param-category">
+                <div class="param-category-header" data-bs-toggle="collapse" data-bs-target="#electrode-params">
+                  <i class="bi bi-battery-charging param-category-icon"></i>
+                  <h5>电极材料 <span class="badge bg-success ms-2">核心组件</span></h5>
+                  <i class="bi bi-chevron-down ms-auto"></i>
+                </div>
+                <div class="param-category-body collapse show" id="electrode-params">
+                  <div class="param-group">
+                    <div class="param-group-header">
+                      <h6 class="param-group-title">正极材料</h6>
+                    </div>
+                    <div class="param-group-desc">正极材料决定了电池的能量密度和电化学性能</div>
+                    
+                    <div class="row g-3">
+                      <!-- 正极活性材料 -->
+                      <div class="col-md-6">
+                        <div class="input-group">
+                          <span class="input-group-text">
+                            <i class="bi bi-plus-circle-fill text-success"></i>
+                          </span>
+                          <input type="number" class="form-control" 
+                                id="Cathode_active_material_1"
+                                name="Cathode_active_material_1"
+                                min="0" max="1000" step="0.01"
+                                placeholder="数量">
+                          <span class="input-group-text input-unit">kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                          <small class="text-muted">正极活性材料</small>
+                          <span class="param-tag param-tag-important">重要</span>
+                        </div>
+                      </div>
+                      
+                      <!-- 导电碳黑 -->
+                      <div class="col-md-6">
+                        <div class="input-group">
+                          <span class="input-group-text">
+                            <i class="bi bi-circle-fill text-secondary"></i>
+                          </span>
+                          <input type="number" class="form-control"
+                                id="Carbon_black_Cathode"
+                                name="Carbon_black_Cathode"
+                                min="0" max="50" step="0.01"
+                                placeholder="数量">
+                          <span class="input-group-text input-unit">kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                          <small class="text-muted">导电碳黑</small>
+                          <span class="param-tag param-tag-optional">可选</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="param-group">
+                    <div class="param-group-header">
+                      <h6 class="param-group-title">负极材料</h6>
+                    </div>
+                    <div class="param-group-desc">负极材料决定了电池的充放电性能和寿命</div>
+                    
+                    <div class="row g-3">
+                      <!-- 石墨负极材料 -->
+                      <div class="col-md-6">
+                        <div class="input-group">
+                          <span class="input-group-text">
+                            <i class="bi bi-dash-circle-fill text-danger"></i>
+                          </span>
+                          <input type="number" class="form-control"
+                                id="graphite"
+                                name="graphite"
+                                min="0" max="800" step="0.1"
+                                placeholder="数量">
+                          <span class="input-group-text input-unit">kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                          <small class="text-muted">石墨负极材料</small>
+                          <span class="param-tag param-tag-important">重要</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 粘合剂类别 -->
+              <div class="param-category mt-4">
+                <div class="param-category-header" data-bs-toggle="collapse" data-bs-target="#binder-params">
+                  <i class="bi bi-droplet-fill param-category-icon"></i>
+                  <h5>粘合剂</h5>
+                  <i class="bi bi-chevron-down ms-auto"></i>
+                </div>
+                <div class="param-category-body collapse" id="binder-params">
+                  <div class="alert alert-info d-flex align-items-center">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <div>
+                      粘合剂有助于电极材料的附着，分为SBR/CMC和PVDF两类
+                    </div>
+                  </div>
+                  
+                  <div class="row g-3">
+                    <!-- SBR/CMC类粘合剂 -->
+                    <div class="col-md-6">
+                      <div class="card h-100 border-0 bg-light">
+                        <div class="card-body">
+                          <h6 class="card-title fw-bold mb-3">SBR/CMC粘合剂</h6>
+                          
+                          <div class="mb-3">
+                            <label class="form-label">负极用量</label>
+                            <div class="input-group">
+                              <input type="number" class="form-control"
+                                    id="Binder_SBR_CMC_Anode"
+                                    name="Binder_SBR_CMC_Anode"
+                                    min="0" max="50" step="0.01"
+                                    placeholder="数量">
+                              <span class="input-group-text input-unit">kg</span>
+                            </div>
+                          </div>
+                          
+                          <div class="mb-0">
+                            <label class="form-label">正极用量</label>
+                            <div class="input-group">
+                              <input type="number" class="form-control"
+                                    id="Binder_SBR_CMC_Cathode"
+                                    name="Binder_SBR_CMC_Cathode"
+                                    min="0" max="50" step="0.01"
+                                    placeholder="数量">
+                              <span class="input-group-text input-unit">kg</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- PVDF类粘合剂 -->
+                    <div class="col-md-6">
+                      <div class="card h-100 border-0 bg-light">
+                        <div class="card-body">
+                          <h6 class="card-title fw-bold mb-3">PVDF粘合剂</h6>
+                          
+                          <div class="mb-3">
+                            <label class="form-label">负极用量</label>
+                            <div class="input-group">
+                              <input type="number" class="form-control"
+                                    id="Binder_PVDF_Anode"
+                                    name="Binder_PVDF_Anode"
+                                    min="0" max="50" step="0.01"
+                                    placeholder="数量">
+                              <span class="input-group-text input-unit">kg</span>
+                            </div>
+                          </div>
+                          
+                          <div class="mb-0">
+                            <label class="form-label">正极用量</label>
+                            <div class="input-group">
+                              <input type="number" class="form-control"
+                                    id="Binder_PVDF_Cathode"
+                                    name="Binder_PVDF_Cathode"
+                                    min="0" max="50" step="0.01"
+                                    placeholder="数量">
+                              <span class="input-group-text input-unit">kg</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 金属材料类别 -->
+              <div class="param-category mt-4">
+                <div class="param-category-header" data-bs-toggle="collapse" data-bs-target="#metal-params">
+                  <i class="bi bi-layers-fill param-category-icon"></i>
+                  <h5>金属材料</h5>
+                  <i class="bi bi-chevron-down ms-auto"></i>
+                </div>
+                <div class="param-category-body collapse" id="metal-params">
+                  <ul class="nav nav-tabs mb-3" id="metalTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link active" id="copper-tab" data-bs-toggle="tab" data-bs-target="#copper" type="button" role="tab">铜材料</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link" id="aluminum-tab" data-bs-toggle="tab" data-bs-target="#aluminum" type="button" role="tab">铝材料</button>
+                    </li>
+                  </ul>
+                  
+                  <div class="tab-content" id="metalTabContent">
+                    <!-- 铜材料选项卡 -->
+                    <div class="tab-pane fade show active" id="copper" role="tabpanel">
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <div class="input-group">
+                            <span class="input-group-text bg-warning-subtle">
+                              <i class="bi bi-clipboard-data"></i>
+                            </span>
+                            <input type="number" class="form-control"
+                                  id="Copper_Foil"
+                                  name="Copper_Foil"
+                                  min="0" max="100" step="0.01"
+                                  placeholder="数量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                          <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">铜箔 (集流体)</small>
+                            <button type="button" class="btn btn-link btn-sm p-0" 
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-placement="top" 
+                                   title="铜箔作为负极集流体，通常厚度为8-10μm">
+                              <i class="bi bi-question-circle"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="input-group">
+                            <span class="input-group-text bg-warning-subtle">
+                              <i class="bi bi-lightning"></i>
+                            </span>
+                            <input type="number" class="form-control"
+                                  id="Copper_Tab"
+                                  name="Copper_Tab"
+                                  min="0" max="50" step="0.01"
+                                  placeholder="数量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                          <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">铜极耳 (电流导出)</small>
+                            <button type="button" class="btn btn-link btn-sm p-0" 
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-placement="top" 
+                                   title="铜极耳负责负极电流导出">
+                              <i class="bi bi-question-circle"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- 铝材料选项卡 -->
+                    <div class="tab-pane fade" id="aluminum" role="tabpanel">
+                      <div class="row g-3">
+                        <div class="col-md-4">
+                          <div class="input-group">
+                            <span class="input-group-text bg-info-subtle">
+                              <i class="bi bi-clipboard-data"></i>
+                            </span>
+                            <input type="number" class="form-control"
+                                  id="Aluminum_Foil"
+                                  name="Aluminum_Foil"
+                                  min="0" max="100" step="0.01"
+                                  placeholder="数量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                          <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">铝箔 (集流体)</small>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="input-group">
+                            <span class="input-group-text bg-info-subtle">
+                              <i class="bi bi-lightning"></i>
+                            </span>
+                            <input type="number" class="form-control"
+                                  id="Aluminum_Tab"
+                                  name="Aluminum_Tab"
+                                  min="0" max="50" step="0.01"
+                                  placeholder="数量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                          <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">铝极耳 (电流导出)</small>
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="input-group">
+                            <span class="input-group-text bg-info-subtle">
+                              <i class="bi bi-box"></i>
+                            </span>
+                            <input type="number" class="form-control"
+                                  id="Aluminum_Container"
+                                  name="Aluminum_Container"
+                                  min="0" max="100" step="0.01"
+                                  placeholder="数量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                          <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">铝容器 (外壳)</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 电解液类别 -->
+              <div class="param-category mt-4">
+                <div class="param-category-header" data-bs-toggle="collapse" data-bs-target="#electrolyte-params">
+                  <i class="bi bi-water param-category-icon"></i>
+                  <h5>电解液</h5>
+                  <i class="bi bi-chevron-down ms-auto"></i>
+                </div>
+                <div class="param-category-body collapse" id="electrolyte-params">
+                  <div class="alert alert-success d-flex align-items-center mb-3">
+                    <i class="bi bi-lightbulb-fill me-2"></i>
+                    <div>
+                      电解液是锂离子传输的载体，对电池性能和寿命具有重要影响
+                    </div>
+                  </div>
+                  
+                  <div class="row row-cols-1 row-cols-md-3 g-3">
+                    <!-- LiPF6 -->
+                    <div class="col">
+                      <div class="card h-100 border-0">
+                        <div class="card-body p-3 bg-light">
+                          <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-flask-fill text-primary me-2"></i>
+                            <h6 class="card-title mb-0">六氟磷酸锂 (LiPF6)</h6>
+                          </div>
+                          <p class="card-text small text-muted mb-3">电解质盐，提供Li+离子</p>
+                          <div class="input-group">
+                            <input type="number" class="form-control"
+                                  id="Electrolyte_LiPF6"
+                                  name="Electrolyte_LiPF6"
+                                  min="0" max="50" step="0.1"
+                                  placeholder="输入用量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- EC -->
+                    <div class="col">
+                      <div class="card h-100 border-0">
+                        <div class="card-body p-3 bg-light">
+                          <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-droplet-fill text-info me-2"></i>
+                            <h6 class="card-title mb-0">碳酸乙烯酯 (EC)</h6>
+                          </div>
+                          <p class="card-text small text-muted mb-3">有机溶剂，高介电常数</p>
+                          <div class="input-group">
+                            <input type="number" class="form-control"
+                                  id="Electrolyte_EC"
+                                  name="Electrolyte_EC"
+                                  min="0" max="50" step="0.1"
+                                  placeholder="输入用量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- DMC -->
+                    <div class="col">
+                      <div class="card h-100 border-0">
+                        <div class="card-body p-3 bg-light">
+                          <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-droplet-half text-info me-2"></i>
+                            <h6 class="card-title mb-0">碳酸二甲酯 (DMC)</h6>
+                          </div>
+                          <p class="card-text small text-muted mb-3">有机溶剂，低粘度</p>
+                          <div class="input-group">
+                            <input type="number" class="form-control"
+                                  id="Electrolyte_DMC"
+                                  name="Electrolyte_DMC"
+                                  min="0" max="50" step="0.1"
+                                  placeholder="输入用量">
+                            <span class="input-group-text input-unit">kg</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 塑料和其他材料类别 -->
+              <div class="param-category mt-4">
+                <div class="param-category-header" data-bs-toggle="collapse" data-bs-target="#plastic-params">
+                  <i class="bi bi-grid-3x3-gap-fill param-category-icon"></i>
+                  <h5>塑料和其他材料</h5>
+                  <i class="bi bi-chevron-down ms-auto"></i>
+                </div>
+                <div class="param-category-body collapse" id="plastic-params">
+                  <div class="row g-3">
+                    <div class="col-md-6 col-lg-3">
+                      <div class="d-flex flex-column h-100">
+                        <label class="form-label fw-medium">PE隔膜</label>
+                        <div class="input-group mb-2">
+                          <input type="number" class="form-control"
+                                id="Plastic_PE_Separator"
+                                name="Plastic_PE_Separator"
+                                min="0" max="100" step="0.1"
+                                placeholder="数量">
+                          <span class="input-group-text input-unit">kg</span>
+                        </div>
+                        <small class="text-muted mt-auto">正负极隔离层</small>
+                      </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                      <div class="d-flex flex-column h-100">
+                        <label class="form-label fw-medium">CPP容器</label>
+                        <div class="input-group mb-2">
+                          <input type="number" class="form-control"
+                                id="Plastic_CPP_Container"
+                                name="Plastic_CPP_Container"
+                                min="0" max="100" step="0.1"
+                                placeholder="数量">
+                          <span class="input-group-text input-unit">kg</span>
+                        </div>
+                        <small class="text-muted mt-auto">塑料外壳材料</small>
+                      </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                      <div class="d-flex flex-column h-100">
+                        <label class="form-label fw-medium">PET容器</label>
+                        <div class="input-group mb-2">
+                          <input type="number" class="form-control"
+                                id="Plastic_PET_Container"
+                                name="Plastic_PET_Container"
+                                min="0" max="100" step="0.1"
+                                placeholder="数量">
+                          <span class="input-group-text input-unit">kg</span>
+                        </div>
+                        <small class="text-muted mt-auto">塑料外壳材料</small>
+                      </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                      <div class="d-flex flex-column h-100">
+                        <label class="form-label fw-medium">尼龙碳纤维容器</label>
+                        <div class="input-group mb-2">
+                          <input type="number" class="form-control"
+                                id="Nylon_Carbon_Fiber_Container"
+                                name="Nylon_Carbon_Fiber_Container"
+                                min="0" max="100" step="0.1"
+                                placeholder="数量">
+                          <span class="input-group-text input-unit">kg</span>
+                        </div>
+                        <small class="text-muted mt-auto">高强度外壳</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 第三步：能耗参数 -->
+            <div class="form-section" id="step-3" data-step="3">
+              <div class="param-category">
+                <div class="param-category-header">
+                  <i class="bi bi-lightning-charge-fill param-category-icon"></i>
+                  <h5>制造工艺能耗</h5>
+                </div>
+                <div class="param-category-body">
+                  <!-- 制造工艺能耗表格 -->
+                  <div class="table-responsive">
+                    <table class="table table-hover">
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 30%">工艺步骤</th>
+                          <th>电力消耗 (kWh)</th>
+                          <th style="width: 30%">热能消耗 (kWh)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- 负极制造 -->
+                        <tr>
+                          <td class="fw-medium">负极搅拌</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Mixing_anode" name="Mixing_anode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">负极涂布</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Coating_anode" name="Coating_anode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">负极干燥</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Drying_anode" name="Drying_anode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Drying_anode_heat" name="Drying_anode_heat"
+                                  min="0" step="0.1" placeholder="热能消耗">
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">负极辊压</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Calendering_anode" name="Calendering_anode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">负极分切</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Slitting_anode" name="Slitting_anode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        
+                        <!-- 分隔行 -->
+                        <tr class="table-light">
+                          <td colspan="3" class="text-center fw-bold">正极制造</td>
+                        </tr>
+                        
+                        <!-- 正极制造 -->
+                        <tr>
+                          <td class="fw-medium">正极搅拌</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Mixing_cathode" name="Mixing_cathode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">正极涂布</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Coating_cathode" name="Coating_cathode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">正极干燥</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Drying_cathode" name="Drying_cathode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Drying_cathode_heat" name="Drying_cathode_heat"
+                                  min="0" step="0.1" placeholder="热能消耗">
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">正极辊压</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Calendering_cathode" name="Calendering_cathode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">正极分切</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Slitting_cathode" name="Slitting_cathode"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        
+                        <!-- 分隔行 -->
+                        <tr class="table-light">
+                          <td colspan="3" class="text-center fw-bold">电池组装</td>
+                        </tr>
+                        
+                        <!-- 电池组装 -->
+                        <tr>
+                          <td class="fw-medium">电极堆叠</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Stacking" name="Stacking"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">电解液注入</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Filling" name="Filling"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">电池化成</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Formation" name="Formation"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        
+                        <!-- 分隔行 -->
+                        <tr class="table-light">
+                          <td colspan="3" class="text-center fw-bold">车间环境控制</td>
+                        </tr>
+                        
+                        <!-- 车间环境控制 -->
+                        <tr>
+                          <td class="fw-medium">地面加热</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Floor_heating" name="Floor_heating"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">干燥室</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Dry_room" name="Dry_room"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Dry_room_heat" name="Dry_room_heat"
+                                  min="0" step="0.1" placeholder="热能消耗">
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="fw-medium">其他设备</td>
+                          <td>
+                            <input type="number" class="form-control form-control-sm"
+                                  id="Miscellaneous" name="Miscellaneous"
+                                  min="0" step="0.1" placeholder="电力消耗">
+                          </td>
+                          <td>-</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 锂原料类别 -->
+              <div class="param-category mt-4">
+                <div class="param-category-header" data-bs-toggle="collapse" data-bs-target="#lithium-params">
+                  <i class="bi bi-gem param-category-icon"></i>
+                  <h5>锂原料来源</h5>
+                  <i class="bi bi-chevron-down ms-auto"></i>
+                </div>
+                <div class="param-category-body collapse" id="lithium-params">
+                  <div class="alert alert-success">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    锂原料来源对碳足迹有显著影响，请填写矿物来源比例
+                  </div>
+                  
+                  <div class="row g-4">
+                    <!-- 卤水提锂比例 -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-medium">卤水提锂比例 (%)</label>
+                      <div class="input-group">
+                        <span class="input-group-text">
+                          <i class="bi bi-water"></i>
+                        </span>
+                        <input type="number" class="form-control"
+                               id="Brine_Ratio" name="Brine_Ratio"
+                               min="0" max="100" step="0.1" placeholder="0-100">
+                        <span class="input-group-text">%</span>
+                      </div>
+                      <div class="form-text">盐湖卤水提锂的比例，通常碳足迹较低</div>
+                    </div>
+                    
+                    <!-- 锂辉石提锂比例 -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-medium">锂辉石提锂比例 (%)</label>
+                      <div class="input-group">
+                        <span class="input-group-text">
+                          <i class="bi bi-geo-alt"></i>
+                        </span>
+                        <input type="number" class="form-control"
+                               id="Spodumene_Ratio" name="Spodumene_Ratio"
+                               min="0" max="100" step="0.1" placeholder="0-100">
+                        <span class="input-group-text">%</span>
+                      </div>
+                      <div class="form-text">锂辉石矿提锂的比例，通常碳足迹较高</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 步骤导航按钮 -->
+            <div class="form-actions d-flex justify-content-between">
+              <button type="button" class="btn btn-outline-secondary" id="prevBtn" onclick="prevStep()">
+                <i class="bi bi-arrow-left me-1"></i>上一步
+              </button>
+              <div>
+                <button type="button" class="btn btn-success" id="nextBtn" onclick="nextStep()">
+                  下一步<i class="bi bi-arrow-right ms-1"></i>
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none">
+                  <i class="bi bi-lightning-charge me-1"></i>立即计算
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        <!-- 结果展示区 -->
+        <div class="result-card p-4 mt-4" {% if prediction is not defined %}style="display: none;"{% endif %}>
+          <h4 class="text-success mb-4">
+            <i class="bi bi-graph-up me-2"></i>碳排放预测结果
+            <span class="badge bg-secondary float-end">v2.1</span>
+          </h4>
+          
+          <!-- 总排放量显示 -->
+          <div class="card mb-4">
+            <div class="card-body text-center">
+              <h2 class="display-4 text-success">{% if prediction is defined and prediction is not none %}{{ "%0.2f"|format(prediction) }}{% else %}XX.XX{% endif %} <small class="text-muted">kgCO₂e</small></h2>
+              <p class="text-muted">基于您提供的参数，预测的总碳排放量</p>
+            </div>
+          </div>
+          
+          <!-- 结果标签导航 -->
+          <ul class="nav nav-tabs results-nav mb-3" id="resultTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="breakdown-tab" data-bs-toggle="tab" data-bs-target="#breakdown" type="button" role="tab" aria-controls="breakdown" aria-selected="true">排放分布</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" aria-controls="features" aria-selected="false">参数详情</button>
+            </li>
+          </ul>
+          
+          <!-- 标签内容 -->
+          <div class="tab-content" id="resultTabContent">
+            <!-- 排放分布标签 -->
+            <div class="tab-pane fade show active" id="breakdown" role="tabpanel" aria-labelledby="breakdown-tab">
+              {% if emission_table is defined %}
+              <div class="table-responsive">
+                {{ emission_table | safe }}
+              </div>
+              {% else %}
+              <div class="d-flex flex-column mb-3">
+                {% if breakdowns is defined %}
+                  {% for name, pct in zip(emission_names, breakdowns) %}
+                  <div class="progress-item">
+                    <span class="d-none" id="pct-value-{{ loop.index }}">{{ pct }}</span>
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar bg-success progress-value-{{ loop.index }}" 
+                          role="progressbar" 
+                          aria-valuenow="{{ pct }}" 
+                          aria-valuemin="0" 
+                          aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                      <small>{{ name }}</small>
+                      <small>{{ "%0.1f"|format(pct) }}%</small>
+                    </div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                <!-- 示例数据，仅在没有真实数据时显示 -->
+                <div class="progress-item">
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 35%" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mt-1">
+                    <small>正极材料</small>
+                    <small>35.0%</small>
+                  </div>
+                </div>
+                <div class="progress-item">
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mt-1">
+                    <small>负极材料</small>
+                    <small>25.0%</small>
+                  </div>
+                </div>
+                <div class="progress-item">
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mt-1">
+                    <small>电解液</small>
+                    <small>20.0%</small>
+                  </div>
+                </div>
+                <div class="progress-item">
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 15%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mt-1">
+                    <small>外壳材料</small>
+                    <small>15.0%</small>
+                  </div>
+                </div>
+                <div class="progress-item">
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 5%" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                  <div class="d-flex justify-content-between mt-1">
+                    <small>其他组件</small>
+                    <small>5.0%</small>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+            
+            <!-- 参数详情标签页内容 -->
+            <!-- 参数详情标签页内容 -->
+            <div class="tab-pane fade" id="features" role="tabpanel" aria-labelledby="features-tab">
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                标记为"<span class="auto-fill">(自动填补)</span>"的值表示在计算过程中由模型自动填补的缺失值。
+              </div>
+              
+              <!-- 参数表格 - 完全重构原始数据表格 -->
+              <div class="table-responsive">
+                <table class="table table-hover table-bordered" id="restructuredTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width: 30%">参数名称</th>
+                      <th style="width: 25%">输入值</th>
+                      <th style="width: 35%">计算使用值</th>
+                      <th style="width: 10%">单位</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- 表格内容将通过JavaScript动态生成 -->
+                    <tr>
+                      <td colspan="4" class="text-center">
+                        <div class="spinner-border text-success" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">正在加载参数数据...</p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 原始数据表格（隐藏） -->
+              <div style="display: none;" id="originalTableContainer">
+                {% if filled_features is defined %}
+                  {{ filled_features | safe }}
+                {% endif %}
+              </div>
+
+              <!-- 表格重构脚本 -->
+              <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                  // 检查原始表格是否存在
+                  const originalContainer = document.getElementById('originalTableContainer');
+                  const originalTable = originalContainer ? originalContainer.querySelector('table') : null;
+                  
+                  if (!originalTable) {
+                    console.error('原始数据表格不存在');
+                    document.getElementById('restructuredTable').querySelector('tbody').innerHTML = `
+                      <tr>
+                        <td colspan="4" class="text-center text-danger">
+                          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                          无法加载参数详情数据
+                        </td>
+                      </tr>
+                    `;
+                    return;
+                  }
+                  
+                  // 参数名映射到中文描述
+                  const paramNameMap = {
+                    'Battery_Type': '电池类型',
+                    'Component_Country': '组件生产地',
+                    'Assembly_Country': '组装地区',
+                    'Cathode_active_material_1': '正极活性材料',
+                    'graphite': '石墨负极材料',
+                    'Carbon_black_Cathode': '导电碳黑',
+                    'Binder_SBR_CMC_Anode': 'SBR/CMC粘合剂 (负极)',
+                    'Binder_SBR_CMC_Cathode': 'SBR/CMC粘合剂 (正极)',
+                    'Binder_PVDF_Anode': 'PVDF粘合剂 (负极)',
+                    'Binder_PVDF_Cathode': 'PVDF粘合剂 (正极)',
+                    'Copper_Foil': '铜箔',
+                    'Copper_Tab': '铜极耳',
+                    'Aluminum_Foil': '铝箔',
+                    'Aluminum_Tab': '铝极耳',
+                    'Aluminum_Container': '铝容器',
+                    'Electrolyte_LiPF6': '六氟磷酸锂 (LiPF6)',
+                    'Electrolyte_EC': '碳酸乙烯酯 (EC)',
+                    'Electrolyte_DMC': '碳酸二甲酯 (DMC)',
+                    'Plastic_PE_Separator': 'PE隔膜',
+                    'Plastic_CPP_Container': 'CPP容器',
+                    'Plastic_PET_Container': 'PET容器',
+                    'Nylon_Carbon_Fiber_Container': '尼龙碳纤维容器',
+                    'Mixing_anode': '负极搅拌',
+                    'Mixing_cathode': '正极搅拌',
+                    'Coating_anode': '负极涂布',
+                    'Coating_cathode': '正极涂布',
+                    'Drying_anode': '负极干燥',
+                    'Drying_cathode': '正极干燥',
+                    'Calendering_anode': '负极辊压',
+                    'Calendering_cathode': '正极辊压',
+                    'Slitting_anode': '负极分切',
+                    'Slitting_cathode': '正极分切',
+                    'Stacking': '电极堆叠',
+                    'Filling': '电解液注入',
+                    'Formation': '电池化成',
+                    'Floor_heating': '地面加热',
+                    'Dry_room': '干燥室',
+                    'Miscellaneous': '其他设备',
+                    'Drying_anode_heat': '负极干燥热能',
+                    'Drying_cathode_heat': '正极干燥热能',
+                    'Dry_room_heat': '干燥室热能',
+                    'Brine_Ratio': '卤水提锂比例',
+                    'Spodumene_Ratio': '锂辉石提锂比例'
+                  };
+                  
+                  // 参数的单位
+                  const paramUnitMap = {
+                    'Battery_Type': '-',
+                    'Component_Country': '-',
+                    'Assembly_Country': '-',
+                    'Cathode_active_material_1': 'kg',
+                    'graphite': 'kg',
+                    'Carbon_black_Cathode': 'kg',
+                    'Binder_SBR_CMC_Anode': 'kg',
+                    'Binder_SBR_CMC_Cathode': 'kg',
+                    'Binder_PVDF_Anode': 'kg',
+                    'Binder_PVDF_Cathode': 'kg',
+                    'Copper_Foil': 'kg',
+                    'Copper_Tab': 'kg',
+                    'Aluminum_Foil': 'kg',
+                    'Aluminum_Tab': 'kg',
+                    'Aluminum_Container': 'kg',
+                    'Electrolyte_LiPF6': 'kg',
+                    'Electrolyte_EC': 'kg',
+                    'Electrolyte_DMC': 'kg',
+                    'Plastic_PE_Separator': 'kg',
+                    'Plastic_CPP_Container': 'kg',
+                    'Plastic_PET_Container': 'kg',
+                    'Nylon_Carbon_Fiber_Container': 'kg',
+                    'Mixing_anode': 'kWh',
+                    'Mixing_cathode': 'kWh',
+                    'Coating_anode': 'kWh',
+                    'Coating_cathode': 'kWh',
+                    'Drying_anode': 'kWh',
+                    'Drying_cathode': 'kWh',
+                    'Calendering_anode': 'kWh',
+                    'Calendering_cathode': 'kWh',
+                    'Slitting_anode': 'kWh',
+                    'Slitting_cathode': 'kWh',
+                    'Stacking': 'kWh',
+                    'Filling': 'kWh',
+                    'Formation': 'kWh',
+                    'Floor_heating': 'kWh',
+                    'Dry_room': 'kWh',
+                    'Miscellaneous': 'kWh',
+                    'Drying_anode_heat': 'kWh',
+                    'Drying_cathode_heat': 'kWh',
+                    'Dry_room_heat': 'kWh',
+                    'Brine_Ratio': '%',
+                    'Spodumene_Ratio': '%'
+                  };
+                  
+                  // 参数分类
+                  const paramCategories = {
+                    'Battery_Type': '基础配置参数',
+                    'Component_Country': '基础配置参数',
+                    'Assembly_Country': '基础配置参数',
+                    'Cathode_active_material_1': '电极材料',
+                    'graphite': '电极材料',
+                    'Carbon_black_Cathode': '电极材料',
+                    'Binder_SBR_CMC_Anode': '粘合剂',
+                    'Binder_SBR_CMC_Cathode': '粘合剂',
+                    'Binder_PVDF_Anode': '粘合剂',
+                    'Binder_PVDF_Cathode': '粘合剂',
+                    'Copper_Foil': '金属材料',
+                    'Copper_Tab': '金属材料',
+                    'Aluminum_Foil': '金属材料',
+                    'Aluminum_Tab': '金属材料',
+                    'Aluminum_Container': '金属材料',
+                    'Electrolyte_LiPF6': '电解液',
+                    'Electrolyte_EC': '电解液',
+                    'Electrolyte_DMC': '电解液',
+                    'Plastic_PE_Separator': '塑料和其他材料',
+                    'Plastic_CPP_Container': '塑料和其他材料',
+                    'Plastic_PET_Container': '塑料和其他材料',
+                    'Nylon_Carbon_Fiber_Container': '塑料和其他材料',
+                    'Mixing_anode': '制造工艺能耗',
+                    'Mixing_cathode': '制造工艺能耗',
+                    'Coating_anode': '制造工艺能耗',
+                    'Coating_cathode': '制造工艺能耗',
+                    'Drying_anode': '制造工艺能耗',
+                    'Drying_cathode': '制造工艺能耗',
+                    'Calendering_anode': '制造工艺能耗',
+                    'Calendering_cathode': '制造工艺能耗',
+                    'Slitting_anode': '制造工艺能耗',
+                    'Slitting_cathode': '制造工艺能耗',
+                    'Stacking': '制造工艺能耗',
+                    'Filling': '制造工艺能耗',
+                    'Formation': '制造工艺能耗',
+                    'Floor_heating': '制造工艺能耗',
+                    'Dry_room': '制造工艺能耗',
+                    'Miscellaneous': '制造工艺能耗',
+                    'Drying_anode_heat': '制造工艺能耗',
+                    'Drying_cathode_heat': '制造工艺能耗',
+                    'Dry_room_heat': '制造工艺能耗',
+                    'Brine_Ratio': '锂原料来源',
+                    'Spodumene_Ratio': '锂原料来源'
+                  };
+                  
+                  // 解析原始表格数据
+                  const headerCells = originalTable.querySelectorAll('thead th');
+                  const headers = Array.from(headerCells).map(th => th.textContent.trim());
+                  
+                  // 存储所有参数数据
+                  const paramData = {};
+                  
+                  // 遍历表头，找出参数名
+                  headers.forEach((header, index) => {
+                    if (header.includes('(原始)')) {
+                      const paramName = header.replace('(原始)', '');
+                      if (!paramData[paramName]) {
+                        paramData[paramName] = { name: paramName };
+                      }
+                      paramData[paramName].originalIndex = index;
+                    } else if (header.includes('(填补后)')) {
+                      const paramName = header.replace('(填补后)', '');
+                      if (!paramData[paramName]) {
+                        paramData[paramName] = { name: paramName };
+                      }
+                      paramData[paramName].filledIndex = index;
+                    }
+                  });
+                  
+                  // 从行中提取值
+                  const dataRows = originalTable.querySelectorAll('tbody tr');
+                  if (dataRows.length > 0) {
+                    const firstRow = dataRows[0];
+                    const cells = firstRow.querySelectorAll('td');
+                    
+                    Object.keys(paramData).forEach(paramName => {
+                      const param = paramData[paramName];
+                      if (param.originalIndex !== undefined) {
+                        param.originalValue = cells[param.originalIndex].textContent.trim();
+                      }
+                      if (param.filledIndex !== undefined) {
+                        param.filledValue = cells[param.filledIndex].textContent.trim();
+                        param.isAutofilled = param.filledValue.includes('(自动填补)');
+                      }
+                    });
+                  }
+                  
+                  // 重构表格
+                  const restructuredTable = document.getElementById('restructuredTable');
+                  const tbody = restructuredTable.querySelector('tbody');
+                  tbody.innerHTML = '';
+                  
+                  // 按类别组织参数
+                  const categories = [...new Set(Object.values(paramCategories))];
+                  categories.forEach(category => {
+                    // 添加类别标题行
+                    const categoryRow = document.createElement('tr');
+                    categoryRow.className = 'table-secondary';
+                    
+                    const categoryCell = document.createElement('td');
+                    categoryCell.colSpan = 4;
+                    categoryCell.className = 'fw-bold';
+                    categoryCell.textContent = category;
+                    
+                    categoryRow.appendChild(categoryCell);
+                    tbody.appendChild(categoryRow);
+                    
+                    // 添加该类别的所有参数
+                    Object.keys(paramData).forEach(paramName => {
+                      if (paramCategories[paramName] === category) {
+                        const param = paramData[paramName];
+                        
+                        const row = document.createElement('tr');
+                        
+                        // 参数名列
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = paramNameMap[paramName] || paramName;
+                        row.appendChild(nameCell);
+                        
+                        // 输入值列
+                        const inputCell = document.createElement('td');
+                        inputCell.textContent = param.originalValue || '未提供';
+                        row.appendChild(inputCell);
+                        
+                        // 计算使用值列
+                        const calcCell = document.createElement('td');
+                        calcCell.textContent = param.filledValue || param.originalValue || '-';
+                        if (param.isAutofilled) {
+                          calcCell.className = 'auto-fill';
+                        }
+                        row.appendChild(calcCell);
+                        
+                        // 单位列
+                        const unitCell = document.createElement('td');
+                        unitCell.textContent = paramUnitMap[paramName] || '-';
+                        row.appendChild(unitCell);
+                        
+                        tbody.appendChild(row);
+                      }
+                    });
+                  });
+                });
+              </script>
+
+              <!-- CSS 样式 -->
+              <style>
+                .auto-fill {
+                  color: #20c997 !important;
+                  font-weight: 500 !important;
+                  background-color: rgba(32, 201, 151, 0.1) !important;
+                }
+                .table-secondary {
+                  background-color: #f8f9fa !important;
+                }
+                .table-secondary td {
+                  font-size: 1rem !important;
+                  padding: 0.75rem 1rem !important;
+                  font-weight: 600 !important;
+                  color: #212529 !important;
+                }
+                #restructuredTable {
+                  border-collapse: collapse !important;
+                  width: 100% !important;
+                }
+                #restructuredTable th, #restructuredTable td {
+                  border: 1px solid #dee2e6 !important;
+                  padding: 0.75rem !important;
+                  vertical-align: middle !important;
+                }
+                #restructuredTable tbody tr:hover:not(.table-secondary) {
+                  background-color: rgba(0,0,0,.03) !important;
+                }
+                #restructuredTable thead th {
+                  font-weight: 600 !important;
+                  background-color: #f8f9fa !important;
+                  border-bottom: 2px solid #dee2e6 !important;
+                }
+              </style>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 全局变量
+    let currentStep = 1;
+    const totalSteps = 3;
+    
+    // 下一步按钮处理函数
+    function nextStep() {
+      if (currentStep < totalSteps) {
+        updateStep(currentStep + 1);
+      }
+    }
+    
+    // 上一步按钮处理函数
+    function prevStep() {
+      if (currentStep > 1) {
+        updateStep(currentStep - 1);
+      }
+    }
+    
+    // 更新步骤状态
+    function updateStep(newStep) {
+      // 隐藏当前步骤
+      document.getElementById(`step-${currentStep}`).classList.remove('active');
+      
+      // 显示新步骤
+      document.getElementById(`step-${newStep}`).classList.add('active');
+      
+      // 更新步骤指示器
+      for (let i = 1; i <= totalSteps; i++) {
+        const indicator = document.getElementById(`step-indicator-${i}`);
+        if (i <= newStep) {
+          indicator.classList.add('active');
+          indicator.querySelector('.step-indicator').textContent = i < newStep ? '✓' : i;
+        } else {
+          indicator.classList.remove('active');
+          indicator.querySelector('.step-indicator').textContent = i;
+        }
+      }
+      
+      // 更新按钮状态
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      // 第一步时禁用"上一步"按钮
+      prevBtn.disabled = newStep === 1;
+      
+      // 最后一步时隐藏"下一步"按钮，显示"立即计算"按钮
+      if (newStep === totalSteps) {
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'inline-block';
+      } else {
+        nextBtn.style.display = 'inline-block';
+        submitBtn.style.display = 'none';
+      }
+      
+      // 更新当前步骤
+      currentStep = newStep;
+    }
+
+    // 搜索参数功能
+    document.getElementById('paramSearch')?.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase().trim();
+      
+      if (searchTerm === '') {
+        // 重置显示所有参数
+        document.querySelectorAll('.input-group').forEach(group => {
+          const parentElement = group.closest('.col, .col-md-6, .col-md-4, tr');
+          if (parentElement) {
+            parentElement.style.display = '';
+          }
+        });
+        return;
+      }
+      
+      // 搜索匹配的参数
+      document.querySelectorAll('.input-group').forEach(group => {
+        const parentElement = group.closest('.col, .col-md-6, .col-md-4, tr');
+        if (!parentElement) return;
+        
+        const input = group.querySelector('input, select');
+        const label = parentElement.querySelector('label, small, .text-muted');
+        
+        if (!input || !label) {
+          parentElement.style.display = 'none';
+          return;
+        }
+        
+        const inputName = input.id.toLowerCase();
+        const labelText = label.textContent.toLowerCase();
+        
+        if (inputName.includes(searchTerm) || labelText.includes(searchTerm)) {
+          parentElement.style.display = '';
+          
+          // 也显示父容器
+          let parent = parentElement.parentElement;
+          while (parent && !parent.classList.contains('param-category')) {
+            parent.style.display = '';
+            parent = parent.parentElement;
+          }
+          
+          // 展开折叠的容器
+          const collapse = parentElement.closest('.collapse');
+          if (collapse && !collapse.classList.contains('show')) {
+            new bootstrap.Collapse(collapse).show();
+          }
+        } else {
+          parentElement.style.display = 'none';
+        }
+      });
+    });
+    
+    // 检查并显示调试信息
+    function checkFilledFeatures() {
+      const resultSection = document.querySelector('.result-card');
+      
+      if (resultSection && window.getComputedStyle(resultSection).display !== 'none') {
+        console.log("结果区域已显示");
+        const featuresTab = document.getElementById('features');
+        if (featuresTab) {
+          const featuresHtml = featuresTab.innerHTML;
+          console.log("参数详情内容长度:", featuresHtml.length);
+          
+          const tableContent = featuresTab.querySelector('table');
+          if (tableContent) {
+            console.log("表格已找到:", tableContent);
+          } else {
+            console.warn("表格未找到");
+          }
+        }
+      }
+    }
+    
+    // 初始化事件处理程序
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("DOM完全加载");
+      
+      // 初始化按钮状态
+      document.getElementById('prevBtn').disabled = true;
+      
+      // 初始化工具提示
+      const tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltips.forEach(function(tooltipEl) {
+        new bootstrap.Tooltip(tooltipEl);
+      });
+      
+      // 初始化折叠面板
+      const collapseElements = document.querySelectorAll('.param-category-header[data-bs-toggle="collapse"]');
+      collapseElements.forEach(element => {
+        element.addEventListener('click', function() {
+          const targetId = this.getAttribute('data-bs-target');
+          const targetElement = document.querySelector(targetId);
+          
+          if (targetElement) {
+            const isCollapsed = targetElement.classList.contains('show');
+            
+            // 切换箭头图标方向
+            const icon = this.querySelector('.bi-chevron-down');
+            if (icon) {
+              icon.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+              icon.style.transition = 'transform 0.3s ease';
+            }
+          }
+        });
+      });
+      
+      // 设置结果区域的进度条宽度
+      document.querySelectorAll('[id^="pct-value-"]').forEach(function(element) {
+        const index = element.id.split('-').pop();
+        const pct = parseFloat(element.textContent || '0');
+        const progressBar = document.querySelector('.progress-value-' + index);
+        if (progressBar) {
+          progressBar.style.width = pct + '%';
+        }
+      });
+      
+      // 检查参数详情内容
+      setTimeout(checkFilledFeatures, 500);
+    });
+  </script>
+</body>
+</html>
